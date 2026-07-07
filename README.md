@@ -6,6 +6,8 @@ Real names removed, revenue numbers scrambled with a fixed seed, brands renamed 
 
 **Live report**: [panagiotis-sourilas.github.io/sports-media-kpi-monitor](https://panagiotis-sourilas.github.io/sports-media-kpi-monitor/)
 
+![Report preview](docs/screenshot.png)
+
 ## What it does
 
 - Reads a monthly financial export (SAP-style), a frozen annual budget, and daily traffic (GA4-style).
