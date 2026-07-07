@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: marts_monthly_kpi
+    description: One row per brand per month. Everything the KPI report needs, no post-processing.
+    columns:
+      - name: period
+        tests: [not_null]
+      - name: brand_key
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+      - name: revenue_chf
+        description: Total revenue in CHF for the brand-month.
+      - name: ebit_chf
+        description: Revenue minus costs. Costs are stored as negative, so this is a sum.
+      - name: betting_share
+        description: Betting revenue as a share of total revenue. NULL when total revenue is zero.
+      - name: users
+        description: Peak daily users in the month. Not additive across months.
+      - name: sessions
+        description: Total sessions in the month. Additive.
+      - name: pageviews
+        description: Total pageviews in the month. Additive.
