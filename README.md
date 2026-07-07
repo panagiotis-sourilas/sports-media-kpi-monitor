@@ -4,12 +4,14 @@ Every month the CEO and six brand MDs at a European sports media group open one 
 
 Real names removed, revenue numbers scrambled with a fixed seed, brands renamed A through F. Everything else works the same as production.
 
+**Live report**: [panagiotis-sourilas.github.io/sports-media-kpi-monitor](https://panagiotis-sourilas.github.io/sports-media-kpi-monitor/)
+
 ## What it does
 
 - Reads a monthly financial export (SAP-style), a frozen annual budget, and daily traffic (GA4-style).
 - Cleans and models in dbt on BigQuery.
-- Renders a static HTML page: revenue vs budget, EBIT vs budget, traffic vs last year, revenue mix, all normalized to CHF.
-- Uploads to GCS. Anyone with the link opens it in the browser.
+- Renders a static HTML page: revenue and EBIT vs FC1/Budget/PY, traffic vs annual-planning targets, revenue mix, all normalized to CHF.
+- Publishes to GitHub Pages. Anyone with the link opens it in the browser.
 
 No BI tool. No dashboard subscription. It's a page.
 
@@ -18,10 +20,10 @@ No BI tool. No dashboard subscription. It's a page.
 | Layer | Choice | Why not the obvious alternative |
 |---|---|---|
 | Ingestion | Python + GCS file drops | [Not Fivetran](docs/decisions/0001-why-not-fivetran.md) |
-| Warehouse | BigQuery | [Not Snowflake](docs/decisions/0004-why-bigquery.md) *(coming Area 2)* |
-| Transform | dbt | [Not Python transforms](docs/decisions/0005-why-dbt.md) *(coming Area 2)* |
-| Orchestrate | Cloud Scheduler + Cloud Functions | [Not Airflow](docs/decisions/0002-why-not-airflow.md) *(coming Area 3)* |
-| Serve | Static HTML on GCS | [Not Looker / Metabase](docs/decisions/0003-why-static-html-not-bi-tool.md) *(coming Area 5)* |
+| Warehouse | BigQuery | [Not Snowflake](docs/decisions/0004-why-bigquery.md) |
+| Transform | dbt | [Not Python transforms](docs/decisions/0005-why-dbt.md) |
+| Serve | Static HTML on GitHub Pages | Not Looker or Metabase *(ADR pending)* |
+| Orchestrate | Manual for now, GitHub Actions next | Not Airflow *(ADR pending)* |
 
 The pattern: every layer picks the cheapest thing that works. Then explains why we didn't buy the modern default. Those explanations are the point — [see the ADRs](docs/decisions/).
 
@@ -30,8 +32,9 @@ The pattern: every layer picks the cheapest thing that works. Then explains why 
 - [`docs/architecture.md`](docs/architecture.md) — the whole pipeline in one diagram
 - [`docs/decisions/`](docs/decisions/) — why each tool, why not the alternatives
 - [`docs/portfolio.md`](docs/portfolio.md) — what this is meant to show, and what it isn't
-- [`dbt/`](dbt/) *(coming Area 2)* — the actual models
-- [`serving/`](serving/) *(coming Area 5)* — the render script
+- [`dbt/`](dbt/) — the actual models (staging → intermediate → marts)
+- [`serving/`](serving/) — the render script + Jinja template
+- [`ingestion/`](ingestion/) — synthetic data generator + BigQuery loader
 
 ## The real version
 
