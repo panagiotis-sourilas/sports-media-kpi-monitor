@@ -17,6 +17,7 @@ raw/
 *.csv
 *.parquet
 !ingestion/synthetic_data/schemas/*.csv
+!dbt/seeds/*.csv
 
 # Secrets
 *.json
@@ -39,3 +40,4 @@ Thumbs.db
 serving/output/
 *.html
 !docs/**/*.html
+!serving/templates/*.html

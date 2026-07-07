@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sports Media KPI Monitor — {{ period.strftime('%B %Y') }}</title>
+<style>
+  :root {
+    --green: #16a34a;
+    --yellow: #ca8a04;
+    --red: #dc2626;
+    --gray: #94a3b8;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 24px;
+  }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.5px; }
+  .subtitle { color: var(--muted); font-size: 14px; }
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+  .brand-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .brand-name {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .brand-country {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .kpi-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+  }
+  .kpi-row:last-child { padding-bottom: 0; }
+  .light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .light.green  { background: var(--green); }
+  .light.yellow { background: var(--yellow); }
+  .light.red    { background: var(--red); }
+  .light.gray   { background: var(--gray); }
+  .kpi-label {
+    flex: 1;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .kpi-value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    margin-right: 12px;
+  }
+  .kpi-variance {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    min-width: 60px;
+    text-align: right;
+  }
+  .kpi-variance.green  { color: var(--green); }
+  .kpi-variance.yellow { color: var(--yellow); }
+  .kpi-variance.red    { color: var(--red); }
+  .kpi-variance.gray   { color: var(--gray); }
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .metric-row .val {
+    color: var(--text);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .betting-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .betting-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--yellow), var(--red));
+    border-radius: 2px;
+  }
+  footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sports Media KPI Monitor</h1>
+  <div class="subtitle">
+    {{ period.strftime('%B %Y') }} · Generated {{ generated_at }}
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    {% for row in rows %}
+    <div class="card">
+      <div class="brand-header">
+        <div class="brand-name">{{ row.brand_key | replace('brand_', 'Brand ') | title }}</div>
+        <div class="brand-country">{{ row.country }}</div>
+      </div>
+
+      {# Revenue traffic-light row #}
+      <div class="kpi-row">
+        <span class="light {{ row.revenue_status }}"></span>
+        <span class="kpi-label">Revenue</span>
+        <span class="kpi-value">
+          {{ '{:,.0f}'.format(row.revenue_chf) }} CHF
+        </span>
+        <span class="kpi-variance {{ row.revenue_status }}">
+          {% if row.revenue_variance_pct is not none -%}
+            {{ '{:+.1%}'.format(row.revenue_variance_pct) }}
+          {%- else -%}
+            —
+          {%- endif %}
+        </span>
+      </div>
+
+      {# EBIT traffic-light row #}
+      <div class="kpi-row">
+        <span class="light {{ row.ebit_status }}"></span>
+        <span class="kpi-label">EBIT</span>
+        <span class="kpi-value">
+          {{ '{:,.0f}'.format(row.ebit_chf) }} CHF
+        </span>
+        <span class="kpi-variance {{ row.ebit_status }}">
+          {% if row.ebit_variance_pct is not none -%}
+            {{ '{:+.1%}'.format(row.ebit_variance_pct) }}
+          {%- else -%}
+            —
+          {%- endif %}
+        </span>
+      </div>
+
+      {# Betting share — the "diversification" indicator #}
+      <div class="kpi-row">
+        <div style="flex: 1;">
+          <div class="metric-row">
+            <span>Betting share</span>
+            <span class="val">
+              {% if row.betting_share is not none -%}
+                {{ '{:.0%}'.format(row.betting_share) }}
+              {%- else -%}
+                —
+              {%- endif %}
+            </span>
+          </div>
+          <div class="betting-bar">
+            <div class="betting-bar-fill" style="width: {{ (row.betting_share * 100) if row.betting_share else 0 }}%"></div>
+          </div>
+        </div>
+      </div>
+
+      {# Traffic metrics #}
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+        <div class="metric-row">
+          <span>Users (peak day)</span>
+          <span class="val">{{ '{:,}'.format(row.users) if row.users else '—' }}</span>
+        </div>
+        <div class="metric-row">
+          <span>Sessions</span>
+          <span class="val">{{ '{:,}'.format(row.sessions) if row.sessions else '—' }}</span>
+        </div>
+        <div class="metric-row">
+          <span>Pageviews</span>
+          <span class="val">{{ '{:,}'.format(row.pageviews) if row.pageviews else '—' }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+
+<footer>
+  <p>
+    Anonymized portfolio project.
+    <a href="https://github.com/panagiotis-sourilas/sports-media-kpi-monitor">github.com/panagiotis-sourilas/sports-media-kpi-monitor</a>
+  </p>
+</footer>
+
+</body>
+</html>
