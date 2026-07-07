@@ -16,8 +16,6 @@ Each file here captures one decision. Why we picked this thing, what we didn't p
 
 Because six months later, someone (usually me) asks *"why on earth did we pick X"* and there's no answer. ADRs are the answer. Written when the reasoning is fresh, kept short enough that people actually read them.
 
-Real production ADRs at work stop after the alternatives. The last section in these public ones — "In an interview" — is portfolio-specific.
-
 ## What ADRs are for
 
 Decisions that would take an hour to re-justify from scratch. Not every commit. Not every refactor. If you're going to have to defend the choice in a meeting six months out, write one.

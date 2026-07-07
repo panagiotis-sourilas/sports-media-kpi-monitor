@@ -30,10 +30,4 @@ Maintenance forever. When Google deprecates a GA4 API version, we fix it. When P
 
 ## Alternatives
 
-- **Airbyte OSS on Cloud Run** — realistic if we ever want managed ingestion for one specific source without the license fee. Deferred.
-- **Airbyte Cloud** — cheaper than Fivetran, same connector gap for our sources.
-- **Meltano** — smaller catalog, similar problem.
-
-## In an interview
-
-"We looked at Fivetran seriously and passed. At CHF 300/month total infra, a $1,500/month license doesn't pencil out — and about half our sources need custom code anyway because they're not in the catalog. GA4 goes through Google's native BigQuery export. Everything else is Python in Cloud Functions. If we ever hit a source that's genuinely painful to maintain, we'd stand up Airbyte OSS on Cloud Run for that one, not go full managed."
+Airbyte OSS on Cloud Run is the realistic middle path if we ever need managed ingestion for one specific source without paying for a full license. Airbyte Cloud is cheaper than Fivetran but has the same connector gap for our sources. Meltano has a smaller catalog and the same problem.
