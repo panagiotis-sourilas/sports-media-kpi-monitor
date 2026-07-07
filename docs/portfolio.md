@@ -1,44 +1,27 @@
-# Portfolio Context
+# Why this repo exists
 
-## What this repo is
+I own a monthly KPI report at work. Six brands, six countries, financial data from SAP, budget from Excel, traffic from GA4. The CEO and the six MDs open it every month and decide what to worry about. It's the report I get pulled into meetings about.
 
-This is the **anonymized, open-source re-implementation** of a production monthly KPI report I built and own for a European sports media group. The production version is used by the CEO and 6 brand managing directors to run the business.
+I can't put it on GitHub — real financials, real brand names, real internal domains. So I rebuilt it here with synthetic data and generic brand names, keeping the design decisions and the trade-offs intact. If you're a hiring manager or a data engineer trying to figure out how I think, this is the thing to look at.
 
-The public version:
+## What I hope you take away
 
-- Uses **fully synthetic data** (see `ingestion/synthetic_data/`).
-- Renames the 6 real brands to `Brand A/B/C/D/E/F` with fictional country flags.
-- Multiplies real revenue figures by a random (but reproducible-with-seed) factor.
-- Strips all real employee names, org references, and internal domains.
+**I make architecture decisions based on numbers, not defaults.** The stack could be Fivetran + Snowflake + dbt Cloud + Looker. Every ADR in `docs/decisions/` explains why we're not doing that, with real cost numbers. If we were a bigger team or had more budget, several of those calls would flip. That's the point — I want you to see the reasoning.
 
-## What it demonstrates
+**I can model business logic in SQL, not just query it.** Currency normalization (EUR and RSD amounts, CHF report), budget-to-actual matching by brand/month/P&L line, revenue exclusions that vary by brand (Abola's user market revenue doesn't count toward RpM, for example — that lives in dbt). This is the stuff analytics engineering roles hire for.
 
-| Skill | Where to look |
-|---|---|
-| **Analytics engineering with dbt** | [`dbt/`](../dbt/) — staging + intermediate + marts layout |
-| **Warehouse thinking (BigQuery)** | [`docs/architecture.md`](architecture.md), partitioning + clustering choices |
-| **Business-rule modeling** | [`dbt/models/marts/`](../dbt/models/) — currency FX, budget-to-actual matching, brand-specific exclusions |
-| **Documenting decisions** | [`docs/decisions/`](decisions/) — ADRs explaining why we picked / rejected each tool |
-| **Report generation** | [`serving/`](../serving/) — Jinja + Plotly → static HTML on GCS |
-| **Testing & data contracts** | [`dbt/tests/`](../dbt/) + schema definitions |
-| **Cost-aware architecture** | Decisions grounded in real economics, not defaults |
+**I write docs like a human, not a wiki.** Short, opinionated, honest about the costs. If a doc looks like it was generated in five seconds by a model, I've failed. Skim [`decisions/0001-why-not-fivetran.md`](decisions/0001-why-not-fivetran.md) — that's the voice.
 
-## What it does NOT demonstrate
+## What this repo isn't
 
-Honest about the trade-offs:
+**Not streaming.** The real report is monthly. Making the demo streaming would be pretending to solve a problem that doesn't exist here.
 
-- **No streaming** — everything is batch (monthly). The production version is monthly by design. Streaming would be pretending.
-- **No custom BI dashboards** — we render static HTML deliberately (see [`decisions/0003-why-static-html-not-bi-tool.md`](decisions/0003-why-static-html-not-bi-tool.md)). If the target role requires Looker/Tableau, this repo won't show it.
-- **No orchestrator** in the modern-stack sense (no Airflow / Dagster / Prefect). We use Cloud Scheduler + Cloud Functions. See [`decisions/0002-why-not-airflow.md`](decisions/0002-why-not-airflow.md).
-- **No ingestion tool** in the modern-stack sense (no Fivetran / Airbyte). Same rationale — see [`decisions/0001-why-not-fivetran.md`](decisions/0001-why-not-fivetran.md).
+**Not multi-tenant.** One company, one report. No user auth, no per-brand access rules in the demo. The production version has those — see [`docs/decisions/0002-why-not-airflow.md`](decisions/0002-why-not-airflow.md) *(coming Area 3)* for the access story.
 
-## How to talk about this in interviews
+**Not a BI dashboard.** No filters, no drill-down, no click-to-explore. It's a page you read. That's on purpose. Executives don't self-serve, they get sent a link. See [`decisions/0003-why-static-html-not-bi-tool.md`](decisions/0003-why-static-html-not-bi-tool.md) *(coming Area 5)*.
 
-**One-sentence pitch:**
-> "I built and open-sourced an anonymized version of the monthly KPI report I own for a 6-brand European sports media group — it demonstrates end-to-end analytics engineering: synthetic data generation, BigQuery + dbt modeling with business rules for currency and budget-to-actual matching, and a rendered HTML report on GCS. The design decisions are all in ADRs, so you can see why I picked what I picked."
+## How to talk to me about this
 
-**When asked "why didn't you use [X]":**
-> Point at the ADR. That's why they exist.
+The best question you can ask is *"why did you pick X over Y."* Every choice here has a paragraph of reasoning behind it, and I'd rather explain that than defend a shiny stack diagram.
 
-**When asked "what's the biggest limitation":**
-> "It's monthly batch. If the business needed real-time, the shape of the whole thing would change — streaming ingestion, incremental dbt models, a warehouse designed for concurrent reads. I chose not to fake that."
+The second-best question is *"what would break first at 10× the data."* I have opinions.
