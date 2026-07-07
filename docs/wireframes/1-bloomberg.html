@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Direction 1 — Bloomberg terminal</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --panel: #141414;
+    --border: #2a2a2a;
+    --text: #e6e6e6;
+    --muted: #6b6b6b;
+    --green: #00d17a;
+    --red: #ff4444;
+    --amber: #f5a623;
+    --orange: #ff7f00;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 12px/1.5 "SF Mono", "Consolas", "Monaco", monospace;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px; margin-bottom: 24px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  h1 {
+    font-size: 14px; font-weight: 600; margin: 0;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .controls { display: flex; gap: 16px; align-items: center; }
+  .toggle {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--muted); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 1px;
+    cursor: pointer; user-select: none;
+  }
+  .toggle input { display: none; }
+  .toggle .switch {
+    width: 32px; height: 16px; border-radius: 999px;
+    background: var(--border); position: relative;
+    transition: background 0.15s;
+  }
+  .toggle .switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--muted); transition: transform 0.15s;
+  }
+  .toggle input:checked + .switch { background: var(--green); }
+  .toggle input:checked + .switch::after { transform: translateX(16px); background: white; }
+  .timestamp { color: var(--muted); font-size: 11px; }
+
+  .compare-bar {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px; padding: 12px 20px;
+    background: var(--panel); border: 1px solid var(--border);
+  }
+  .compare-label {
+    color: var(--muted); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 1.5px;
+  }
+  .compare-btn {
+    padding: 6px 14px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--muted); font: inherit; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .compare-btn:hover { color: var(--text); border-color: var(--muted); }
+  .compare-btn.active {
+    background: var(--green); border-color: var(--green); color: var(--bg);
+    font-weight: 600;
+  }
+  .compare-note {
+    margin-left: auto; color: var(--muted); font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .legend {
+    display: flex; gap: 20px; padding: 12px 20px;
+    background: var(--panel); border: 1px solid var(--border);
+    margin-bottom: 24px; font-size: 11px;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    align-items: center;
+  }
+  .legend-title {
+    color: var(--text); font-weight: 600; margin-right: 12px;
+    padding-right: 12px; border-right: 1px solid var(--border);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+
+  .hero {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 20px; margin-bottom: 24px;
+  }
+  .hero-title {
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .hero-title .measured-against {
+    font-size: 10px; color: var(--amber);
+    letter-spacing: 1px;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border);
+  }
+  .hero-cell {
+    background: var(--panel);
+    padding: 14px 16px;
+    display: flex; flex-direction: column;
+  }
+  .hero-label {
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .hero-value {
+    font-size: 22px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 6px;
+  }
+  .hero-variance { font-size: 11px; font-variant-numeric: tabular-nums; }
+  .sparkline {
+    height: 48px; margin-top: 10px;
+  }
+  .up { color: var(--green); }
+  .down { color: var(--red); }
+  .warn { color: var(--amber); }
+
+  .table-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .table-title {
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .table-subtitle {
+    font-size: 10px; color: var(--amber);
+    letter-spacing: 1px;
+  }
+  table {
+    width: 100%; border-collapse: collapse;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    text-align: right; padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  th {
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    font-weight: 500;
+    background: #0a0a0a;
+    position: sticky; top: 0;
+  }
+  th .sub {
+    display: block; font-size: 9px; color: var(--amber);
+    margin-top: 2px; font-weight: 400; letter-spacing: 1px;
+  }
+  th:first-child, td:first-child { text-align: left; }
+  td.brand { font-weight: 600; }
+  td.brand .brand-inner {
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1a1a1a; }
+  .dot {
+    display: inline-block;
+    width: 8px; height: 8px; border-radius: 50%;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .dot.green  { background: var(--green); }
+  .dot.amber  { background: var(--amber); }
+  .dot.red    { background: var(--red); }
+  .dot.orange { background: var(--orange); }
+  .cell {
+    display: inline-flex; align-items: center; gap: 8px;
+    justify-content: flex-end;
+  }
+  .footer {
+    margin-top: 24px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 10px;
+    text-align: right;
+  }
+
+  body:not(.show-values) .num-value,
+  body:not(.show-values) .num-variance { display: none; }
+</style>
+</head>
+<body class="show-values">
+<div class="container">
+  <header>
+    <h1>Sports Media KPI Monitor · June 2028</h1>
+    <div class="controls">
+      <label class="toggle">
+        <input type="checkbox" id="valuesToggle" checked>
+        <span class="switch"></span>
+        Show values
+      </label>
+      <div class="timestamp">Generated 2028-07-07 · Refresh: monthly</div>
+    </div>
+  </header>
+
+  <div class="compare-bar">
+    <span class="compare-label">Compare</span>
+    <button class="compare-btn active" data-mode="fc1">vs FC1 (mid-year forecast)</button>
+    <button class="compare-btn" data-mode="bud">vs Budget (annual plan)</button>
+    <button class="compare-btn" data-mode="py">vs PY (last year)</button>
+    <span class="compare-note" id="compareNote">Colours and variances reflect: vs FC1</span>
+  </div>
+
+  <div class="legend">
+    <span class="legend-title">Traffic light thresholds</span>
+    <span class="legend-item"><span class="dot green"></span>≥95% of target — On track</span>
+    <span class="legend-item"><span class="dot amber"></span>85–94% — Slightly behind</span>
+    <span class="legend-item"><span class="dot orange"></span>70–84% — Behind</span>
+    <span class="legend-item"><span class="dot red"></span>≤69% — Needs attention</span>
+  </div>
+
+  <div class="hero">
+    <div class="hero-title">
+      <span>Group Performance · YTD Jan–Jun</span>
+      <span class="measured-against" id="heroCompareLabel">Colours measured vs FC1 · Sparklines: last 12 months</span>
+    </div>
+    <div class="hero-grid">
+      <div class="hero-cell">
+        <div class="hero-label"><span class="dot" data-hero="revenue"></span>Revenue</div>
+        <div class="hero-value num-value" data-hero-value="revenue"></div>
+        <div class="hero-variance num-variance" data-hero-var="revenue"></div>
+        <div class="sparkline" id="spark-revenue"></div>
+      </div>
+      <div class="hero-cell">
+        <div class="hero-label"><span class="dot" data-hero="costs"></span>Costs</div>
+        <div class="hero-value num-value" data-hero-value="costs"></div>
+        <div class="hero-variance num-variance" data-hero-var="costs"></div>
+        <div class="sparkline" id="spark-costs"></div>
+      </div>
+      <div class="hero-cell">
+        <div class="hero-label"><span class="dot" data-hero="ebit"></span>EBIT</div>
+        <div class="hero-value num-value" data-hero-value="ebit"></div>
+        <div class="hero-variance num-variance" data-hero-var="ebit"></div>
+        <div class="sparkline" id="spark-ebit"></div>
+      </div>
+      <div class="hero-cell">
+        <div class="hero-label"><span class="dot" data-hero="betting"></span>Betting Share</div>
+        <div class="hero-value num-value" data-hero-value="betting"></div>
+        <div class="hero-variance num-variance" data-hero-var="betting"></div>
+        <div class="sparkline" id="spark-betting"></div>
+      </div>
+      <div class="hero-cell">
+        <div class="hero-label"><span class="dot" data-hero="users"></span>Users MoM</div>
+        <div class="hero-value num-value" data-hero-value="users"></div>
+        <div class="hero-variance num-variance" data-hero-var="users"></div>
+        <div class="sparkline" id="spark-users"></div>
+      </div>
+      <div class="hero-cell">
+        <div class="hero-label"><span class="dot" data-hero="pageviews"></span>Pageviews MoM</div>
+        <div class="hero-value num-value" data-hero-value="pageviews"></div>
+        <div class="hero-variance num-variance" data-hero-var="pageviews"></div>
+        <div class="sparkline" id="spark-pageviews"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-header">
+    <span class="table-title">By Brand · YTD Jan–Jun</span>
+    <span class="table-subtitle" id="tableCompareLabel">Financial metrics vs FC1 · Traffic metrics vs PY</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Brand</th>
+        <th>Revenue<span class="sub" data-th-sub="fin">vs FC1</span></th>
+        <th>Costs<span class="sub" data-th-sub="fin">vs FC1</span></th>
+        <th>EBIT<span class="sub" data-th-sub="fin">vs FC1</span></th>
+        <th>Betting %<span class="sub">of total revenue</span></th>
+        <th>Users<span class="sub" data-th-sub="traf">vs PY</span></th>
+        <th>Sessions<span class="sub" data-th-sub="traf">vs PY</span></th>
+        <th>Pageviews<span class="sub" data-th-sub="traf">vs PY</span></th>
+      </tr>
+    </thead>
+    <tbody id="brandRows"></tbody>
+  </table>
+
+  <div class="footer">
+    Wireframe · Direction 1 · Bloomberg terminal · Synthetic data · <code>panagiotis-sourilas/sports-media-kpi-monitor</code>
+  </div>
+</div>
+
+<script>
+// ── Synthetic data for the three comparison modes ────────────────────
+// In production this comes from the dbt mart with FC1 / Budget / PY columns joined.
+
+const DATA = {
+  fc1: {
+    group: {
+      revenue:   { value: '42,500K', variance: '▲ +3% vs FC1',   direction: 'up',   dot: 'green' },
+      costs:     { value: '-38,800K', variance: '▲ -1% vs FC1',  direction: 'up',   dot: 'green' },
+      ebit:      { value: '3,700K',   variance: '▼ -45% vs FC1', direction: 'down', dot: 'red' },
+      betting:   { value: '47%',      variance: '→ -1pp vs FC1', direction: 'warn', dot: 'amber' },
+      users:     { value: '85M',      variance: '▲ +8% vs PY',   direction: 'up',   dot: 'green' },
+      pageviews: { value: '1,550M',   variance: '▲ +8% vs PY',   direction: 'up',   dot: 'green' },
+    },
+    brands: [
+      { brand:'Brand A', rowDot:'green',
+        revenue:['green','9,900K','+3%','up'], costs:['green','-8,300K','',''], ebit:['green','1,600K','+5%','up'],
+        betting:['amber','55%','',''], users:['green','19M','',''], sessions:['green','27M','',''], pageviews:['green','315M','',''] },
+      { brand:'Brand B', rowDot:'amber',
+        revenue:['green','7,100K','+1%','up'], costs:['green','-5,950K','',''], ebit:['green','1,150K','+4%','up'],
+        betting:['red','70%','',''], users:['amber','13M','',''], sessions:['amber','18M','',''], pageviews:['green','205M','',''] },
+      { brand:'Brand C', rowDot:'green',
+        revenue:['green','5,500K','+3%','up'], costs:['green','-4,500K','',''], ebit:['green','1,000K','+3%','up'],
+        betting:['green','35%','',''], users:['green','11M','',''], sessions:['green','15M','',''], pageviews:['green','180M','',''] },
+      { brand:'Brand D', rowDot:'amber',
+        revenue:['amber','8,700K','-2%','down'], costs:['orange','-7,350K','',''], ebit:['orange','1,350K','-10%','warn'],
+        betting:['red','65%','',''], users:['green','16M','',''], sessions:['green','23M','',''], pageviews:['green','260M','',''] },
+      { brand:'Brand E', rowDot:'green',
+        revenue:['green','4,150K','+0%','up'], costs:['green','-3,800K','',''], ebit:['red','350K','-15%','down'],
+        betting:['green','10%','',''], users:['amber','7M','',''], sessions:['amber','10M','',''], pageviews:['green','135M','',''] },
+      { brand:'Brand F', rowDot:'green',
+        revenue:['green','7,350K','+0%','up'], costs:['green','-6,400K','',''], ebit:['green','950K','+3%','up'],
+        betting:['amber','40%','',''], users:['green','18M','',''], sessions:['green','26M','',''], pageviews:['green','305M','',''] },
+    ]
+  },
+
+  bud: {  // Budget was more optimistic — everyone looks a bit worse
+    group: {
+      revenue:   { value: '42,500K', variance: '▲ +1% vs Bud',    direction: 'up',   dot: 'green' },
+      costs:     { value: '-38,800K', variance: '▼ +2% vs Bud',   direction: 'down', dot: 'amber' },
+      ebit:      { value: '3,700K',   variance: '▼ -52% vs Bud',  direction: 'down', dot: 'red' },
+      betting:   { value: '47%',      variance: '→ -2pp vs Bud',  direction: 'warn', dot: 'amber' },
+      users:     { value: '85M',      variance: '▲ +5% vs Bud',   direction: 'up',   dot: 'green' },
+      pageviews: { value: '1,550M',   variance: '▲ +6% vs Bud',   direction: 'up',   dot: 'green' },
+    },
+    brands: [
+      { brand:'Brand A', rowDot:'green',
+        revenue:['green','9,900K','+1%','up'], costs:['amber','-8,300K','',''], ebit:['green','1,600K','+2%','up'],
+        betting:['amber','55%','',''], users:['green','19M','',''], sessions:['green','27M','',''], pageviews:['green','315M','',''] },
+      { brand:'Brand B', rowDot:'amber',
+        revenue:['amber','7,100K','-1%','down'], costs:['green','-5,950K','',''], ebit:['amber','1,150K','-3%','down'],
+        betting:['red','70%','',''], users:['amber','13M','',''], sessions:['amber','18M','',''], pageviews:['amber','205M','',''] },
+      { brand:'Brand C', rowDot:'green',
+        revenue:['green','5,500K','+1%','up'], costs:['green','-4,500K','',''], ebit:['green','1,000K','+1%','up'],
+        betting:['green','35%','',''], users:['green','11M','',''], sessions:['green','15M','',''], pageviews:['green','180M','',''] },
+      { brand:'Brand D', rowDot:'orange',
+        revenue:['orange','8,700K','-6%','down'], costs:['red','-7,350K','',''], ebit:['red','1,350K','-18%','down'],
+        betting:['red','65%','',''], users:['amber','16M','',''], sessions:['amber','23M','',''], pageviews:['amber','260M','',''] },
+      { brand:'Brand E', rowDot:'amber',
+        revenue:['amber','4,150K','-4%','down'], costs:['amber','-3,800K','',''], ebit:['red','350K','-30%','down'],
+        betting:['green','10%','',''], users:['orange','7M','',''], sessions:['orange','10M','',''], pageviews:['amber','135M','',''] },
+      { brand:'Brand F', rowDot:'green',
+        revenue:['green','7,350K','+2%','up'], costs:['green','-6,400K','',''], ebit:['green','950K','+4%','up'],
+        betting:['amber','40%','',''], users:['green','18M','',''], sessions:['green','26M','',''], pageviews:['green','305M','',''] },
+    ]
+  },
+
+  py: {   // Prior year — mostly growth on top line, tighter on EBIT
+    group: {
+      revenue:   { value: '42,500K', variance: '▲ +12% vs PY',  direction: 'up',   dot: 'green' },
+      costs:     { value: '-38,800K', variance: '▼ +14% vs PY', direction: 'down', dot: 'amber' },
+      ebit:      { value: '3,700K',   variance: '▼ -8% vs PY',  direction: 'down', dot: 'green' },
+      betting:   { value: '47%',      variance: '→ +2pp vs PY', direction: 'warn', dot: 'amber' },
+      users:     { value: '85M',      variance: '▲ +8% vs PY',  direction: 'up',   dot: 'green' },
+      pageviews: { value: '1,550M',   variance: '▲ +8% vs PY',  direction: 'up',   dot: 'green' },
+    },
+    brands: [
+      { brand:'Brand A', rowDot:'green',
+        revenue:['green','9,900K','+15%','up'], costs:['amber','-8,300K','',''], ebit:['green','1,600K','+8%','up'],
+        betting:['amber','55%','',''], users:['green','19M','+11%','up'], sessions:['green','27M','+9%','up'], pageviews:['green','315M','+13%','up'] },
+      { brand:'Brand B', rowDot:'green',
+        revenue:['green','7,100K','+9%','up'], costs:['green','-5,950K','',''], ebit:['green','1,150K','+11%','up'],
+        betting:['red','70%','',''], users:['green','13M','+7%','up'], sessions:['green','18M','+5%','up'], pageviews:['green','205M','+8%','up'] },
+      { brand:'Brand C', rowDot:'green',
+        revenue:['green','5,500K','+18%','up'], costs:['green','-4,500K','',''], ebit:['green','1,000K','+21%','up'],
+        betting:['green','35%','',''], users:['green','11M','+15%','up'], sessions:['green','15M','+12%','up'], pageviews:['green','180M','+16%','up'] },
+      { brand:'Brand D', rowDot:'green',
+        revenue:['green','8,700K','+11%','up'], costs:['amber','-7,350K','',''], ebit:['green','1,350K','+6%','up'],
+        betting:['red','65%','',''], users:['green','16M','+9%','up'], sessions:['green','23M','+8%','up'], pageviews:['green','260M','+10%','up'] },
+      { brand:'Brand E', rowDot:'amber',
+        revenue:['amber','4,150K','-4%','down'], costs:['green','-3,800K','',''], ebit:['red','350K','-38%','down'],
+        betting:['green','10%','',''], users:['amber','7M','-2%','down'], sessions:['amber','10M','-1%','down'], pageviews:['green','135M','+3%','up'] },
+      { brand:'Brand F', rowDot:'green',
+        revenue:['green','7,350K','+13%','up'], costs:['green','-6,400K','',''], ebit:['green','950K','+9%','up'],
+        betting:['amber','40%','',''], users:['green','18M','+14%','up'], sessions:['green','26M','+11%','up'], pageviews:['green','305M','+15%','up'] },
+    ]
+  }
+};
+
+// ── Monthly bar data — actual vs the comparison target, per KPI, per compare-mode
+// Each series is 12 months. In prod this comes from the mart with monthly rows.
+const MONTHLY_LABELS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+
+const MONTHLY = {
+  fc1: {
+    revenue:   { actual: [3.4,3.5,3.6,3.7,3.8,3.9,3.4,3.5,3.7,3.6,3.9,4.2], target: [3.3,3.4,3.5,3.6,3.7,3.8,3.4,3.5,3.6,3.7,3.8,4.0] },
+    costs:     { actual: [-3.1,-3.2,-3.2,-3.3,-3.4,-3.5,-3.0,-3.1,-3.2,-3.3,-3.4,-3.5], target: [-3.0,-3.1,-3.2,-3.3,-3.3,-3.4,-3.0,-3.1,-3.2,-3.2,-3.3,-3.4] },
+    ebit:      { actual: [0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.3,0.5,0.6], target: [0.5,0.5,0.5,0.5,0.6,0.6,0.5,0.5,0.6,0.6,0.7,0.7] },
+    betting:   { actual: [46,46,47,47,48,47,46,47,47,48,47,47], target: [47,47,48,48,48,48,47,48,48,48,48,48] },
+    users:     { actual: [78,80,82,81,84,83,79,81,82,84,84,85], target: [76,78,80,81,82,83,78,80,81,82,83,84] },
+    pageviews: { actual: [1360,1400,1440,1420,1500,1470,1400,1440,1470,1510,1520,1550], target: [1330,1370,1410,1420,1470,1480,1400,1430,1450,1490,1500,1530] },
+  },
+  bud: {
+    revenue:   { actual: [3.4,3.5,3.6,3.7,3.8,3.9,3.4,3.5,3.7,3.6,3.9,4.2], target: [3.5,3.6,3.7,3.8,3.9,4.0,3.6,3.7,3.8,3.9,4.0,4.2] },
+    costs:     { actual: [-3.1,-3.2,-3.2,-3.3,-3.4,-3.5,-3.0,-3.1,-3.2,-3.3,-3.4,-3.5], target: [-2.9,-3.0,-3.1,-3.2,-3.2,-3.3,-2.9,-3.0,-3.1,-3.1,-3.2,-3.3] },
+    ebit:      { actual: [0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.3,0.5,0.6], target: [0.6,0.6,0.6,0.6,0.7,0.7,0.7,0.7,0.7,0.8,0.8,0.9] },
+    betting:   { actual: [46,46,47,47,48,47,46,47,47,48,47,47], target: [49,49,49,49,49,49,49,49,49,49,49,49] },
+    users:     { actual: [78,80,82,81,84,83,79,81,82,84,84,85], target: [80,82,83,84,85,86,82,83,84,85,86,87] },
+    pageviews: { actual: [1360,1400,1440,1420,1500,1470,1400,1440,1470,1510,1520,1550], target: [1380,1420,1440,1450,1490,1500,1440,1470,1490,1520,1540,1560] },
+  },
+  py: {
+    revenue:   { actual: [3.4,3.5,3.6,3.7,3.8,3.9,3.4,3.5,3.7,3.6,3.9,4.2], target: [3.0,3.1,3.2,3.3,3.4,3.5,3.0,3.1,3.2,3.3,3.4,3.7] },
+    costs:     { actual: [-3.1,-3.2,-3.2,-3.3,-3.4,-3.5,-3.0,-3.1,-3.2,-3.3,-3.4,-3.5], target: [-2.7,-2.8,-2.8,-2.9,-3.0,-3.1,-2.6,-2.7,-2.8,-2.9,-3.0,-3.0] },
+    ebit:      { actual: [0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.3,0.5,0.6], target: [0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.4,0.5,0.6] },
+    betting:   { actual: [46,46,47,47,48,47,46,47,47,48,47,47], target: [44,44,45,45,45,45,44,45,45,45,45,45] },
+    users:     { actual: [78,80,82,81,84,83,79,81,82,84,84,85], target: [72,74,76,75,77,77,73,75,76,77,78,79] },
+    pageviews: { actual: [1360,1400,1440,1420,1500,1470,1400,1440,1470,1510,1520,1550], target: [1240,1290,1330,1310,1380,1360,1290,1330,1360,1400,1410,1430] },
+  }
+};
+
+const COMPARE_LABEL = { fc1: 'FC1', bud: 'Budget', py: 'PY' };
+
+const SPARK_COLORS = {
+  green: '#00d17a', amber: '#f5a623', orange: '#ff7f00', red: '#ff4444'
+};
+
+// ── Rendering ────────────────────────────────────────────────────────
+function renderHero(mode) {
+  const data = DATA[mode].group;
+  for (const [key, cell] of Object.entries(data)) {
+    document.querySelector(`[data-hero-value="${key}"]`).textContent = cell.value;
+    const varEl = document.querySelector(`[data-hero-var="${key}"]`);
+    varEl.textContent = cell.variance;
+    varEl.className = 'hero-variance num-variance ' + cell.direction;
+    const dot = document.querySelector(`[data-hero="${key}"]`);
+    dot.className = 'dot ' + cell.dot;
+
+  }
+  // Redraw the bar charts with the new comparison target
+  renderCharts(mode);
+}
+
+function renderRows(mode) {
+  const rows = DATA[mode].brands;
+  const tbody = document.getElementById('brandRows');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="brand"><span class="brand-inner"><span class="dot ${r.rowDot}"></span>${r.brand}</span></td>
+      ${renderCell(r.revenue)}
+      ${renderCell(r.costs)}
+      ${renderCell(r.ebit)}
+      ${renderCell(r.betting)}
+      ${renderCell(r.users)}
+      ${renderCell(r.sessions)}
+      ${renderCell(r.pageviews)}
+    </tr>
+  `).join('');
+}
+
+function renderCell([dot, value, variance, direction]) {
+  const varSpan = variance ? `<span class="${direction} num-variance">${variance}</span>` : '';
+  return `<td><span class="cell"><span class="dot ${dot}"></span><span class="num-value">${value}</span>${varSpan}</span></td>`;
+}
+
+function updateLabels(mode) {
+  const labels = {
+    fc1: { label: 'FC1', hero: 'Colours vs FC1 · Bars: monthly actual (green/red) vs FC1 (grey)',
+           table: 'Financial metrics vs FC1 · Traffic metrics vs PY', finSub: 'vs FC1', trafSub: 'vs PY' },
+    bud: { label: 'Bud', hero: 'Colours vs Budget · Bars: monthly actual (green/red) vs Budget (grey)',
+           table: 'Financial metrics vs Budget · Traffic metrics vs Budget', finSub: 'vs Bud', trafSub: 'vs Bud' },
+    py:  { label: 'PY',  hero: 'Colours vs PY · Bars: monthly actual (green/red) vs PY (grey)',
+           table: 'All metrics vs PY (prior year same period)', finSub: 'vs PY', trafSub: 'vs PY' },
+  }[mode];
+
+  document.getElementById('compareNote').textContent = `Colours and variances reflect: vs ${labels.label}`;
+  document.getElementById('heroCompareLabel').textContent = labels.hero;
+  document.getElementById('tableCompareLabel').textContent = labels.table;
+  document.querySelectorAll('[data-th-sub="fin"]').forEach(el => el.textContent = labels.finSub);
+  document.querySelectorAll('[data-th-sub="traf"]').forEach(el => el.textContent = labels.trafSub);
+}
+
+// Grouped bars: monthly actual vs comparison target. Each month has two bars.
+// Actual bar colored by whether it beat the target for that month.
+function renderChart(id, key, mode) {
+  const el = document.getElementById(id);
+  let chart = echarts.getInstanceByDom(el);
+  if (!chart) chart = echarts.init(el);
+
+  const series = MONTHLY[mode][key];
+  const isCost = key === 'costs';  // costs are negative — beating target means less negative
+  const isShare = key === 'betting';  // betting share: closer to target is neutral; over is worse
+
+  // Color each actual bar based on whether it beat the target
+  const actualColors = series.actual.map((a, i) => {
+    const t = series.target[i];
+    let beat;
+    if (isCost) beat = a >= t;              // less-negative cost beats budgeted cost
+    else if (isShare) beat = Math.abs(a - t) <= 1;  // near target = neutral, else amber-ish
+    else beat = a >= t;
+    return beat ? '#00d17a' : '#ff4444';
+  });
+
+  chart.setOption({
+    animation: false,
+    grid: { left: 2, right: 2, top: 4, bottom: 12 },
+    xAxis: {
+      type: 'category',
+      data: MONTHLY_LABELS,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { fontSize: 8, color: '#6b6b6b', margin: 4, fontFamily: 'SF Mono, monospace' },
+    },
+    yAxis: { type: 'value', show: false, scale: true },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#141414',
+      borderColor: '#2a2a2a',
+      textStyle: { color: '#e6e6e6', fontFamily: 'SF Mono, monospace', fontSize: 11 },
+      formatter: params => {
+        const actual = params.find(p => p.seriesName === 'Actual')?.value;
+        const target = params.find(p => p.seriesName === COMPARE_LABEL[mode])?.value;
+        return `${params[0].axisValue}<br>
+                <span style="color:#00d17a">Actual:</span> ${actual}<br>
+                <span style="color:#6b6b6b">${COMPARE_LABEL[mode]}:</span> ${target}`;
+      },
+    },
+    series: [
+      {
+        name: COMPARE_LABEL[mode],
+        type: 'bar',
+        data: series.target,
+        itemStyle: { color: '#2a2a2a' },
+        barGap: '10%',
+      },
+      {
+        name: 'Actual',
+        type: 'bar',
+        data: series.actual.map((v, i) => ({ value: v, itemStyle: { color: actualColors[i] } })),
+      },
+    ],
+  }, true);
+  return chart;
+}
+
+function renderCharts(mode) {
+  ['revenue', 'costs', 'ebit', 'betting', 'users', 'pageviews'].forEach(key => {
+    renderChart(`spark-${key}`, key, mode);
+  });
+}
+
+// Init charts once
+renderCharts('fc1');
+
+// Compare mode switch
+function setMode(mode) {
+  document.querySelectorAll('.compare-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+  renderHero(mode);
+  renderRows(mode);
+  updateLabels(mode);
+}
+
+document.querySelectorAll('.compare-btn').forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn.dataset.mode));
+});
+
+// Show/hide values toggle
+document.getElementById('valuesToggle').addEventListener('change', (e) => {
+  document.body.classList.toggle('show-values', e.target.checked);
+});
+
+// Redraw charts on window resize
+window.addEventListener('resize', () => {
+  ['revenue', 'costs', 'ebit', 'betting', 'users', 'pageviews'].forEach(key => {
+    echarts.getInstanceByDom(document.getElementById(`spark-${key}`))?.resize();
+  });
+});
+
+// Initial render
+setMode('fc1');
+</script>
+</body>
+</html>

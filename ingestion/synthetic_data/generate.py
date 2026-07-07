@@ -158,8 +158,10 @@ def gen_traffic(months: list[date], seed: int) -> list[dict]:
     """Daily traffic per brand per device. Weekend spikes + brand-size scaling + noise."""
     rng = random.Random(seed + 2)
     rows = []
-    # Rough daily-user baseline per brand for brand_a
-    BASE_DAILY_USERS = 400_000
+    # Daily-user baseline per brand for brand_a. Numbers are illustrative — a
+    # plausible sports-media range where brand_a peaks around 1.5M daily, other
+    # brands scale down via revenue_scale.
+    BASE_DAILY_USERS = 1_200_000
     for start_of_month in months:
         # iterate every day in that month
         y, mo = start_of_month.year, start_of_month.month
@@ -174,8 +176,9 @@ def gen_traffic(months: list[date], seed: int) -> list[dict]:
                 for device, dev_share in [("mobile", 0.75), ("desktop", 0.20), ("tablet", 0.05)]:
                     users = int(daily_users * dev_share)
                     if users == 0: continue
-                    sessions = int(users * rng.uniform(1.3, 1.6))
-                    pageviews = int(sessions * rng.uniform(3.0, 4.5))
+                    # Real sports-media ratios: ~1.4 sessions/user, ~2 pageviews/session.
+                    sessions = int(users * rng.uniform(1.3, 1.5))
+                    pageviews = int(sessions * rng.uniform(1.8, 2.2))
                     rows.append({
                         "date": d.isoformat(),
                         "brand_key": brand_key,
