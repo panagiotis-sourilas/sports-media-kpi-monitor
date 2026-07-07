@@ -20,7 +20,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 
 PROJECT = os.environ.get("GCP_PROJECT_ID", "inc-182120-panagiotis-sourilas")
-MARTS_DATASET = "sports_media_kpi_monitor"
+MARTS_DATASET = "sports_media_kpi_monitor_marts"
 BQ_LOCATION = "EU"  # dataset lives in EU, must match on the client
 BUCKET = os.environ.get("REPORT_BUCKET", "sports-media-kpi-monitor-reports")
 HERE = Path(__file__).parent
