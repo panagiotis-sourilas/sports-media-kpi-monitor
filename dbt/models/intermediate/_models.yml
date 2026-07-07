@@ -16,3 +16,40 @@ models:
       - name: amount_chf
         description: amount_local × rate_to_chf. The reporting-currency figure.
         tests: [not_null]
+
+  - name: int_budget_chf
+    description: Budget converted to CHF using the same FX rates as actuals.
+    columns:
+      - name: period
+        tests: [not_null]
+      - name: brand_key
+        tests: [not_null]
+      - name: budget_chf
+        tests: [not_null]
+
+  - name: int_financial_vs_budget
+    description: Actuals joined to budget on brand + period + P&L line. Adds variance columns.
+    columns:
+      - name: period
+        tests: [not_null]
+      - name: brand_key
+        tests: [not_null]
+      - name: pl_line
+        tests: [not_null]
+      - name: variance_chf
+        description: amount_chf minus budget_chf. NULL if either side is missing.
+
+  - name: int_traffic_monthly
+    description: Daily traffic rolled up to monthly per brand.
+    columns:
+      - name: period
+        tests: [not_null]
+      - name: brand_key
+        tests: [not_null]
+      - name: users_max_daily
+        description: Peak daily users in the month. Proxy for MAU on synthetic data.
+        tests: [not_null]
+      - name: sessions_monthly
+        tests: [not_null]
+      - name: pageviews_monthly
+        tests: [not_null]
