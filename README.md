@@ -24,8 +24,8 @@ No BI tool. No dashboard subscription. It's a page.
 | Ingestion | Python + GCS file drops | [Not Fivetran](docs/decisions/0001-why-not-fivetran.md) |
 | Warehouse | BigQuery | [Not Snowflake](docs/decisions/0004-why-bigquery.md) |
 | Transform | dbt | [Not Python transforms](docs/decisions/0005-why-dbt.md) |
-| Serve | Static HTML on GitHub Pages | Not Looker or Metabase *(ADR pending)* |
-| Orchestrate | Manual for now, GitHub Actions next | Not Airflow *(ADR pending)* |
+| Serve | Static HTML on GitHub Pages | [Not Looker or Metabase](docs/decisions/0003-why-static-html-not-bi-tool.md) |
+| Orchestrate | Manual for now, GitHub Actions next | [Not Airflow](docs/decisions/0002-why-not-airflow.md) |
 
 The pattern: every layer picks the cheapest thing that works. Then explains why we didn't buy the modern default. Those explanations are the point — [see the ADRs](docs/decisions/).
 

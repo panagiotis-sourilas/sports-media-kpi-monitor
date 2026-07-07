@@ -7,8 +7,8 @@ Each file here captures one decision. Why we picked this thing, what we didn't p
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-why-not-fivetran.md) | Why we don't use Fivetran | Accepted |
-| 0002 | Why we don't use Airflow | *Area 3* |
-| 0003 | Why static HTML instead of a BI tool | *Area 5* |
+| [0002](0002-why-not-airflow.md) | Why we don't use Airflow | Accepted |
+| [0003](0003-why-static-html-not-bi-tool.md) | Why static HTML instead of a BI tool | Accepted |
 | [0004](0004-why-bigquery.md) | Why BigQuery | Accepted |
 | [0005](0005-why-dbt.md) | Why dbt | Accepted |
 
