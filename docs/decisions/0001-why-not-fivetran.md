@@ -1,67 +1,39 @@
-# ADR 0001 — Why we don't use Fivetran (or Airbyte, Rivery, Stitch)
+# ADR 0001 — Why we don't use Fivetran
 
-**Status:** Accepted
-**Date:** 2026-07-07
+Date: 2026-07-07
 
 ## Context
 
-Managed EL (extract-load) tools like Fivetran, Airbyte, and Rivery are the industry default for ingesting SaaS and database sources into a warehouse. They provide:
-
-- Pre-built connectors for hundreds of sources
-- Automatic schema evolution
-- Managed auth (OAuth refresh, key rotation)
-- Idempotent incremental syncs
-- Zero code to maintain
-
-For a mid-sized data team, choosing "off-the-shelf ingestion" over "hand-rolled Python" is typically the right call — the engineering time saved pays for the license many times over.
+The default 2020s answer for pulling SaaS data into a warehouse is Fivetran (or Airbyte, or Rivery). Managed connectors, auto schema updates, no code. Every "modern data stack" diagram on the internet starts here.
 
 ## Decision
 
-**We do not use Fivetran or a comparable managed EL tool.** Ingestion is bespoke Python running on Cloud Functions, plus native GCS file drops for CSV sources.
+We don't use it. Ingestion is Python in Cloud Functions plus native GCS drops.
 
-## Rationale
+## Why
 
-### 1. Cost profile doesn't justify the license
+Two reasons that both need to be true.
 
-- Fivetran pricing scales with monthly active rows (MAR). For a 6-brand sports media company at our data volume, quoted pricing lands at **~$1,500-2,500/month**.
-- Total GCP cost for the entire stack (including all pipelines) is **~CHF 300/month**.
-- Adding Fivetran would 5-10× the total data-infra cost to save maintenance time on ~10 sources. Bad ROI.
+**The math doesn't work at this size.** Fivetran quoted us around $1,500/month for our row volume. Total GCP bill including everything else is about CHF 300/month. Paying 5× the total infra cost to save maybe 10 hours/month of engineering time isn't a decision, it's a mistake.
 
-### 2. Connector coverage is incomplete for our sources
+**Half our sources aren't in the connector catalog anyway.** GA4 has a first-party BigQuery export from Google — Fivetran would be strictly worse than the free native option. Piano Analytics, SATI, JWPlayer legacy accounts, GAM, OnNet — all custom. We'd still write Python for those, and Fivetran only handles the shrinking rest.
 
-- Our largest source (**GA4**) is best ingested via **Google's native GA4→BigQuery export** — free, real-time-ish, no third-party in the loop. Fivetran doesn't improve on this.
-- Piano Analytics, SATI, JWPlayer legacy accounts, GAM, and OnNet don't all have first-class Fivetran connectors. We'd still need custom Python for the tail.
-- Custom is the *only* option for the sources that matter most, so managed-connector savings apply to a smaller-than-headline share of ingestion work.
+The combination is what kills it. Either problem alone might be surmountable. Both together mean we're paying a lot to solve a small part of the problem badly.
 
-### 3. Our sources change infrequently
+## When we'd reconsider
 
-- Managed connectors shine when source schemas evolve constantly (Salesforce custom fields, Stripe product changes). Our sources are stable: GA4 has a fixed schema, SAP financials are contract-defined, ad-server APIs are versioned.
-- Maintenance cost of hand-rolled ingestion is real but bounded (~2-4 hours/month across the stack).
+If we start onboarding 5+ new SaaS sources a year. Or if a specific source gets so painful (auth loops, schema drift) that a single-source Airbyte deployment on Cloud Run pays for itself.
 
-### 4. We stay closer to the metal
+## What this costs us
 
-- Hand-rolled ingestion lets us apply source-specific business rules early (Abola pageview dedup at ingestion time, currency normalization on load). A managed connector loads raw, and we'd re-apply these downstream anyway.
-- Full control over retry logic, error alerting, and data-quality checks per source. With Fivetran, we'd be tuning inside their UI instead of Python we own.
+Maintenance forever. When Google deprecates a GA4 API version, we fix it. When Piano rotates auth, we fix it. Adding a new brand takes a day of extractor writing instead of 10 minutes of clicking. That's real, and I'm not going to pretend it's not.
 
-## When we would revisit
+## Alternatives
 
-- If we cross a threshold where **>10 new SaaS sources** need to be added in a year (Fivetran connector library becomes valuable).
-- If we hire an engineer whose time costs > $2000/month of Fivetran (unlikely at our scale).
-- If a specific source becomes so painful to maintain (auth refresh loops, schema drift) that a managed connector for that one source is worth it — in which case, use **Airbyte Open Source** self-hosted on Cloud Run for a single source, not a full Fivetran license.
+- **Airbyte OSS on Cloud Run** — realistic if we ever want managed ingestion for one specific source without the license fee. Deferred.
+- **Airbyte Cloud** — cheaper than Fivetran, same connector gap for our sources.
+- **Meltano** — smaller catalog, similar problem.
 
-## Trade-offs we accept
+## In an interview
 
-- **We own maintenance forever.** When Google deprecates the GA4 Data API v1beta, we fix our extractor. When Piano rotates auth, we update our client. This is real work.
-- **We look less "modern" on paper.** In interviews, "we use Fivetran" is easier to say than "we hand-rolled ingestion in Python." We deliberately trade signaling for economics.
-- **Scaling new sources is slower.** Adding a new brand requires writing an extractor. Fivetran would be minutes-to-set-up. This is fine at our current growth rate (roughly one new brand every 12-18 months).
-
-## Alternatives considered
-
-- **Fivetran** — rejected on cost (see above)
-- **Airbyte Open Source, self-hosted on Cloud Run** — realistic future option; deferred until at least one source is painful enough to justify the Cloud Run + Kubernetes-lite overhead
-- **Airbyte Cloud (managed)** — cheaper than Fivetran but same connector-gap issue
-- **Meltano** (open-source, Singer-tap based) — considered; smaller connector library than Airbyte
-
-## For the interview
-
-> "We looked at Fivetran and Airbyte and decided against them for two reasons: at our data volume (~CHF 300/mo total GCP cost), the license would 5× our infra bill for maybe 20% engineering-time savings, and half our sources don't have first-class connectors anyway. We do use Google's native GA4→BigQuery export for our biggest source — that's the modern answer for GA4 on GCP. If we grew to a point where managed ingestion made sense, we'd start with Airbyte OS on Cloud Run for a single source and expand from there."
+"We looked at Fivetran seriously and passed. At CHF 300/month total infra, a $1,500/month license doesn't pencil out — and about half our sources need custom code anyway because they're not in the catalog. GA4 goes through Google's native BigQuery export. Everything else is Python in Cloud Functions. If we ever hit a source that's genuinely painful to maintain, we'd stand up Airbyte OSS on Cloud Run for that one, not go full managed."
