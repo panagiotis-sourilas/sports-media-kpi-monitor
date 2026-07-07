@@ -24,3 +24,13 @@ models:
         description: Total sessions in the month. Additive.
       - name: pageviews
         description: Total pageviews in the month. Additive.
+      - name: users_budget
+        description: Monthly users target set at annual planning.
+      - name: users_fc1
+        description: Monthly users target after mid-year re-forecast.
+      - name: users_variance_vs_budget
+      - name: users_variance_vs_fc1
+      - name: pageviews_budget
+      - name: pageviews_fc1
+      - name: pageviews_variance_vs_budget
+      - name: pageviews_variance_vs_fc1

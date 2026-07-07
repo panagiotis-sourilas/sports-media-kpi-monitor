@@ -53,3 +53,20 @@ models:
         tests: [not_null]
       - name: pageviews_monthly
         tests: [not_null]
+
+  - name: int_traffic_vs_target
+    description: Monthly traffic joined to Users + Pageviews targets (Budget + FC1) with pre-computed variances.
+    columns:
+      - name: period
+        tests: [not_null]
+      - name: brand_key
+        tests: [not_null]
+      - name: users_budget
+        description: Monthly users target set at annual planning.
+      - name: users_fc1
+        description: Monthly users target after mid-year re-forecast.
+      - name: users_variance_vs_budget
+        description: (users_max_daily - users_budget) / users_budget. Nullable when target is missing.
+      - name: users_variance_vs_fc1
+      - name: pageviews_variance_vs_budget
+      - name: pageviews_variance_vs_fc1

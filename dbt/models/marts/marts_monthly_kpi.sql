@@ -12,7 +12,7 @@ with fin as (
 ),
 
 traffic as (
-    select * from {{ ref('int_traffic_monthly') }}
+    select * from {{ ref('int_traffic_vs_target') }}
 ),
 
 -- Aggregate revenue lines by (brand, period)
@@ -73,10 +73,20 @@ final as (
         r.other_revenue_chf,
         safe_divide(r.betting_revenue_chf, r.revenue_chf) as betting_share,
 
-        -- Traffic
+        -- Traffic (actuals)
         t.users_max_daily as users,
         t.sessions_monthly as sessions,
-        t.pageviews_monthly as pageviews
+        t.pageviews_monthly as pageviews,
+
+        -- Traffic targets + variances
+        t.users_budget,
+        t.users_fc1,
+        t.pageviews_budget,
+        t.pageviews_fc1,
+        t.users_variance_vs_budget,
+        t.users_variance_vs_fc1,
+        t.pageviews_variance_vs_budget,
+        t.pageviews_variance_vs_fc1
 
     from revenue r
     left join costs c
