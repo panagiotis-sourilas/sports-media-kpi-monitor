@@ -26,6 +26,9 @@ raw/
 .env
 .env.*
 
+# Personal notes — never publish
+NOTES.md
+
 # Editor
 .vscode/
 .idea/
