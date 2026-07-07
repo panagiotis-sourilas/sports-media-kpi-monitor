@@ -10,7 +10,7 @@ Each file here captures one decision. Why we picked this thing, what we didn't p
 | 0002 | Why we don't use Airflow | *Area 3* |
 | 0003 | Why static HTML instead of a BI tool | *Area 5* |
 | [0004](0004-why-bigquery.md) | Why BigQuery | Accepted |
-| 0005 | Why dbt | *next* |
+| [0005](0005-why-dbt.md) | Why dbt | Accepted |
 
 ## Why ADRs exist at all
 

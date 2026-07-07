@@ -1,0 +1,15 @@
+# Copy this file to ~/.dbt/profiles.yml and fill in your values.
+# Never commit the real profiles.yml — it contains credentials.
+
+sports_media_kpi_monitor:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: inc-182120-panagiotis-sourilas
+      dataset: sports_media_kpi_monitor_dev
+      keyfile: /absolute/path/to/service-account-key.json
+      threads: 4
+      location: EU
+      priority: interactive

@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: stg_financial
+    description: Cleaned financial actuals. One row per brand × month × P&L line, in local currency.
+    columns:
+      - name: period
+        tests: [not_null]
+      - name: brand_key
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+      - name: amount_local
+        description: Amount in the brand's local currency. Positive for revenue, negative for costs.
+        tests: [not_null]
+      - name: is_revenue_line
+        description: True for the four revenue P&L lines. Used by revenue-mix marts.
+
+  - name: stg_budget
+    description: Cleaned budget. Same grain as stg_financial for straight joins downstream.
+    columns:
+      - name: period
+        tests: [not_null]
+      - name: brand_key
+        tests: [not_null]
+      - name: budget_local
+        description: Budgeted amount in local currency.
+        tests: [not_null]
+
+  - name: stg_traffic
+    description: Cleaned daily traffic. Filters zero-user days as data-quality artefacts.
+    columns:
+      - name: event_date
+        tests: [not_null]
+      - name: brand_key
+        tests: [not_null]
+      - name: users
+        tests: [not_null]
+      - name: sessions
+        tests: [not_null]
+      - name: pageviews
+        tests: [not_null]

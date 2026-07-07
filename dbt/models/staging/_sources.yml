@@ -1,0 +1,73 @@
+version: 2
+
+sources:
+  - name: raw
+    database: inc-182120-panagiotis-sourilas
+    schema: sports_media_kpi_monitor_dev
+    description: Raw tables loaded from CSV. Untouched — cleaning happens downstream.
+
+    tables:
+      - name: raw_financial
+        description: Monthly financial actuals per brand per P&L line, in local currency.
+        columns:
+          - name: period
+            description: First day of the reporting month.
+            tests:
+              - not_null
+          - name: brand_key
+            description: Stable internal brand identifier (brand_a through brand_f).
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+          - name: currency
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['EUR', 'RSD', 'RON', 'BGN']
+          - name: pl_line
+            tests:
+              - not_null
+          - name: pl_category
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['Revenue', 'Costs']
+          - name: amount
+            tests:
+              - not_null
+
+      - name: raw_budget
+        description: Annual budget frozen in January, same shape as raw_financial.
+        columns:
+          - name: period
+            tests: [not_null]
+          - name: brand_key
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+          - name: amount
+            tests: [not_null]
+
+      - name: raw_traffic
+        description: Daily traffic per brand per device.
+        columns:
+          - name: date
+            tests: [not_null]
+          - name: brand_key
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+          - name: device
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['mobile', 'desktop', 'tablet']
+          - name: users
+            tests: [not_null]
+          - name: sessions
+            tests: [not_null]
+          - name: pageviews
+            tests: [not_null]
