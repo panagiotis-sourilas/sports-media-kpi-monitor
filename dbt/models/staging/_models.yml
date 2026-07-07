@@ -10,7 +10,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+              arguments:
+                values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
       - name: amount_local
         description: Amount in the brand's local currency. Positive for revenue, negative for costs.
         tests: [not_null]

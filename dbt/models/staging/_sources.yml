@@ -19,12 +19,14 @@ sources:
             tests:
               - not_null
               - accepted_values:
-                  values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+                  arguments:
+                    values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
           - name: currency
             tests:
               - not_null
               - accepted_values:
-                  values: ['EUR', 'RSD', 'RON', 'BGN']
+                  arguments:
+                    values: ['EUR', 'RSD', 'RON', 'BGN']
           - name: pl_line
             tests:
               - not_null
@@ -32,7 +34,8 @@ sources:
             tests:
               - not_null
               - accepted_values:
-                  values: ['Revenue', 'Costs']
+                  arguments:
+                    values: ['Revenue', 'Costs']
           - name: amount
             tests:
               - not_null
@@ -46,7 +49,8 @@ sources:
             tests:
               - not_null
               - accepted_values:
-                  values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+                  arguments:
+                    values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
           - name: amount
             tests: [not_null]
 
@@ -59,12 +63,14 @@ sources:
             tests:
               - not_null
               - accepted_values:
-                  values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+                  arguments:
+                    values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
           - name: device
             tests:
               - not_null
               - accepted_values:
-                  values: ['mobile', 'desktop', 'tablet']
+                  arguments:
+                    values: ['mobile', 'desktop', 'tablet']
           - name: users
             tests: [not_null]
           - name: sessions
