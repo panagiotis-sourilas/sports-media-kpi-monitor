@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Direction 2 — Notion/Linear modern</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card: #ffffff;
+    --text: #0f0f0f;
+    --muted: #6b7280;
+    --border: #ececec;
+    --green: #059669;
+    --red: #dc2626;
+    --amber: #d97706;
+    --orange: #ea580c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, "SF Pro Display", "Inter", sans-serif;
+    letter-spacing: -0.01em;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 24px 32px; }
+  header { margin-bottom: 16px; }
+  .header-inner {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px;
+  }
+  .eyebrow {
+    font-size: 11px; color: var(--muted); font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  h1 {
+    font-size: 24px; font-weight: 700; margin: 0;
+    letter-spacing: -0.02em;
+  }
+  .toggle {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--muted);
+    cursor: pointer; user-select: none;
+  }
+  .toggle input { display: none; }
+  .toggle .switch {
+    width: 32px; height: 18px; border-radius: 999px;
+    background: #e5e7eb; position: relative;
+    transition: background 0.15s;
+  }
+  .toggle .switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.15s;
+  }
+  .toggle input:checked + .switch { background: var(--green); }
+  .toggle input:checked + .switch::after { transform: translateX(14px); }
+
+  .top-bar-row {
+    display: grid; grid-template-columns: 1fr auto; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .compare-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .compare-label {
+    color: var(--muted); font-size: 12px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .compare-btn {
+    padding: 6px 14px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); font: inherit; font-size: 13px;
+    border-radius: 6px; cursor: pointer; transition: all 0.15s;
+  }
+  .compare-btn:hover { color: var(--text); border-color: #d1d5db; }
+  .compare-btn.active {
+    background: var(--green); border-color: var(--green); color: white;
+  }
+  .compare-note { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+  .legend {
+    display: flex; gap: 16px;
+    padding: 10px 14px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 12px; color: var(--muted);
+    align-items: center;
+    white-space: nowrap;
+  }
+  .legend-title {
+    color: var(--text); font-weight: 600;
+    padding-right: 12px; border-right: 1px solid var(--border);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+
+  .hero-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; margin: 16px 0;
+  }
+  .metric {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .metric-dot {
+    position: absolute; top: 14px; right: 14px;
+    width: 9px; height: 9px; border-radius: 50%;
+  }
+  .metric-label {
+    font-size: 11px; color: var(--muted); font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .metric-value {
+    font-size: 24px; font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 2px;
+  }
+  .metric-delta {
+    font-size: 13px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .up { color: var(--green); }
+  .down { color: var(--red); }
+  .warn { color: var(--amber); }
+  .chart { height: 52px; margin-top: 10px; }
+
+  section h2 {
+    font-size: 15px; font-weight: 600; margin: 20px 0 6px;
+    letter-spacing: -0.01em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .subtitle-note {
+    color: var(--muted); font-size: 12px; margin-bottom: 10px;
+  }
+  table {
+    width: 100%; border-collapse: collapse;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+    font-size: 13px; font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    padding: 10px 12px; text-align: right;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  th {
+    font-size: 11px; color: var(--muted); font-weight: 500;
+    background: #fafafa;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  th .sub {
+    display: block; font-size: 10px; color: var(--amber);
+    margin-top: 2px; font-weight: 400;
+    text-transform: none; letter-spacing: 0;
+  }
+  th:first-child, td:first-child { text-align: left; }
+  td.brand { font-weight: 600; }
+  td.brand .brand-inner {
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #fafafa; }
+  .dot {
+    display: inline-block;
+    width: 9px; height: 9px; border-radius: 50%;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .dot.green  { background: var(--green); }
+  .dot.amber  { background: var(--amber); }
+  .dot.red    { background: var(--red); }
+  .dot.orange { background: var(--orange); }
+  .cell {
+    display: inline-flex; align-items: center; gap: 7px;
+    justify-content: flex-end;
+  }
+  .badge {
+    font-size: 11px; padding: 2px 6px; border-radius: 3px;
+    font-weight: 500;
+  }
+  .badge.up { background: #ecfdf5; color: var(--green); }
+  .badge.down { background: #fef2f2; color: var(--red); }
+  .badge.warn { background: #fffbeb; color: var(--amber); }
+
+  footer {
+    margin-top: 20px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 11px;
+    text-align: right;
+  }
+
+  /* Toggle: hides values inside the brand table + variances everywhere.
+     Hero card values stay visible always. */
+  body:not(.show-values) .num-value,
+  body:not(.show-values) .num-variance { display: none; }
+</style>
+</head>
+<body class="show-values">
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <div>
+        <div class="eyebrow">Monthly Report · June 2028</div>
+        <h1>Sports Media KPI Monitor</h1>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="valuesToggle" checked>
+        <span class="switch"></span>
+        Show variances & table values
+      </label>
+    </div>
+  </header>
+
+  <div class="top-bar-row">
+    <div class="compare-bar">
+      <span class="compare-label">Compare</span>
+      <button class="compare-btn active" data-mode="fc1">vs FC1</button>
+      <button class="compare-btn" data-mode="bud">vs Budget</button>
+      <button class="compare-btn" data-mode="py">vs PY</button>
+      <span class="compare-note" id="compareNote">Reflecting: vs FC1</span>
+    </div>
+    <div class="legend">
+      <span class="legend-title">Traffic light</span>
+      <span class="legend-item"><span class="dot green"></span>≥95%</span>
+      <span class="legend-item"><span class="dot amber"></span>85–94%</span>
+      <span class="legend-item"><span class="dot orange"></span>70–84%</span>
+      <span class="legend-item"><span class="dot red"></span>≤69%</span>
+    </div>
+  </div>
+
+  <section>
+    <div class="hero-grid">
+      <div class="metric">
+        <span class="metric-dot" data-hero-dot="revenue"></span>
+        <div class="metric-label">Revenue YTD</div>
+        <div class="metric-value" data-hero-value="revenue">—</div>
+        <div class="metric-delta num-variance" data-hero-var="revenue"></div>
+        <div class="chart" id="chart-revenue"></div>
+      </div>
+      <div class="metric">
+        <span class="metric-dot" data-hero-dot="costs"></span>
+        <div class="metric-label">Costs YTD</div>
+        <div class="metric-value" data-hero-value="costs">—</div>
+        <div class="metric-delta num-variance" data-hero-var="costs"></div>
+        <div class="chart" id="chart-costs"></div>
+      </div>
+      <div class="metric">
+        <span class="metric-dot" data-hero-dot="ebit"></span>
+        <div class="metric-label">EBIT YTD</div>
+        <div class="metric-value" data-hero-value="ebit">—</div>
+        <div class="metric-delta num-variance" data-hero-var="ebit"></div>
+        <div class="chart" id="chart-ebit"></div>
+      </div>
+      <div class="metric">
+        <span class="metric-dot" data-hero-dot="users"></span>
+        <div class="metric-label">Users MoM</div>
+        <div class="metric-value" data-hero-value="users">—</div>
+        <div class="metric-delta num-variance" data-hero-var="users"></div>
+        <div class="chart" id="chart-users"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>By brand</h2>
+    <div class="subtitle-note" id="tableNote">Financial and traffic metrics vs FC1 · Targets set at annual planning</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Brand</th>
+          <th>Revenue<span class="sub" data-th-sub="all">vs FC1</span></th>
+          <th>Costs<span class="sub" data-th-sub="all">vs FC1</span></th>
+          <th>EBIT<span class="sub" data-th-sub="all">vs FC1</span></th>
+          <th>Betting %<span class="sub">of revenue</span></th>
+          <th>Users<span class="sub" data-th-sub="all">vs FC1</span></th>
+          <th>Pageviews<span class="sub" data-th-sub="all">vs FC1</span></th>
+        </tr>
+      </thead>
+      <tbody id="brandRows"></tbody>
+    </table>
+  </section>
+
+  <footer>Wireframe · Direction 2 · Notion / Linear · Synthetic data</footer>
+</div>
+
+<script>
+const HERO_KEYS = ['revenue', 'costs', 'ebit', 'users'];
+
+const DATA = {
+  fc1: {
+    group: {
+      revenue: { value: '42.5M CHF', variance: '↑ +3% vs FC1',   direction: 'up',   dot: 'green' },
+      costs:   { value: '-38.8M CHF', variance: '↑ -1% vs FC1',  direction: 'up',   dot: 'green' },
+      ebit:    { value: '3.7M CHF',  variance: '↓ -45% vs FC1',  direction: 'down', dot: 'red' },
+      users:   { value: '85M',       variance: '↑ +2% vs FC1',   direction: 'up',   dot: 'green' },
+    },
+    brands: [
+      { brand:'Brand A', rowDot:'green', revenue:['green','9,900K','+3%','up'], costs:['green','-8,300K','',''], ebit:['green','1,600K','+5%','up'], betting:['amber','55%','',''], users:['green','19M','+2%','up'], pageviews:['green','315M','+3%','up'] },
+      { brand:'Brand B', rowDot:'amber', revenue:['green','7,100K','+1%','up'], costs:['green','-5,950K','',''], ebit:['green','1,150K','+4%','up'], betting:['red','70%','',''], users:['amber','13M','-4%','down'], pageviews:['green','205M','+1%','up'] },
+      { brand:'Brand C', rowDot:'green', revenue:['green','5,500K','+3%','up'], costs:['green','-4,500K','',''], ebit:['green','1,000K','+3%','up'], betting:['green','35%','',''], users:['green','11M','+4%','up'], pageviews:['green','180M','+5%','up'] },
+      { brand:'Brand D', rowDot:'amber', revenue:['amber','8,700K','-2%','down'], costs:['orange','-7,350K','',''], ebit:['orange','1,350K','-10%','warn'], betting:['red','65%','',''], users:['green','16M','+1%','up'], pageviews:['green','260M','+2%','up'] },
+      { brand:'Brand E', rowDot:'green', revenue:['green','4,150K','+0%','up'], costs:['green','-3,800K','',''], ebit:['red','350K','-15%','down'], betting:['green','10%','',''], users:['amber','7M','-6%','down'], pageviews:['green','135M','+0%','up'] },
+      { brand:'Brand F', rowDot:'green', revenue:['green','7,350K','+0%','up'], costs:['green','-6,400K','',''], ebit:['green','950K','+3%','up'], betting:['amber','40%','',''], users:['green','18M','+3%','up'], pageviews:['green','305M','+4%','up'] },
+    ]
+  },
+  bud: {
+    group: {
+      revenue: { value: '42.5M CHF', variance: '↑ +1% vs Budget',   direction: 'up',   dot: 'green' },
+      costs:   { value: '-38.8M CHF', variance: '↓ +2% vs Budget',  direction: 'down', dot: 'amber' },
+      ebit:    { value: '3.7M CHF',  variance: '↓ -52% vs Budget',  direction: 'down', dot: 'red' },
+      users:   { value: '85M',       variance: '↑ +3% vs Budget',   direction: 'up',   dot: 'green' },
+    },
+    brands: [
+      { brand:'Brand A', rowDot:'green', revenue:['green','9,900K','+1%','up'], costs:['amber','-8,300K','',''], ebit:['green','1,600K','+2%','up'], betting:['amber','55%','',''], users:['green','19M','+3%','up'], pageviews:['green','315M','+4%','up'] },
+      { brand:'Brand B', rowDot:'amber', revenue:['amber','7,100K','-1%','down'], costs:['green','-5,950K','',''], ebit:['amber','1,150K','-3%','down'], betting:['red','70%','',''], users:['amber','13M','-2%','down'], pageviews:['amber','205M','+2%','up'] },
+      { brand:'Brand C', rowDot:'green', revenue:['green','5,500K','+1%','up'], costs:['green','-4,500K','',''], ebit:['green','1,000K','+1%','up'], betting:['green','35%','',''], users:['green','11M','+6%','up'], pageviews:['green','180M','+7%','up'] },
+      { brand:'Brand D', rowDot:'orange', revenue:['orange','8,700K','-6%','down'], costs:['red','-7,350K','',''], ebit:['red','1,350K','-18%','down'], betting:['red','65%','',''], users:['amber','16M','+2%','up'], pageviews:['amber','260M','+3%','up'] },
+      { brand:'Brand E', rowDot:'amber', revenue:['amber','4,150K','-4%','down'], costs:['amber','-3,800K','',''], ebit:['red','350K','-30%','down'], betting:['green','10%','',''], users:['orange','7M','-4%','down'], pageviews:['amber','135M','+2%','up'] },
+      { brand:'Brand F', rowDot:'green', revenue:['green','7,350K','+2%','up'], costs:['green','-6,400K','',''], ebit:['green','950K','+4%','up'], betting:['amber','40%','',''], users:['green','18M','+5%','up'], pageviews:['green','305M','+6%','up'] },
+    ]
+  },
+  py: {
+    group: {
+      revenue: { value: '42.5M CHF', variance: '↑ +12% vs PY', direction: 'up',   dot: 'green' },
+      costs:   { value: '-38.8M CHF', variance: '↓ +14% vs PY', direction: 'down', dot: 'amber' },
+      ebit:    { value: '3.7M CHF',  variance: '↓ -8% vs PY',  direction: 'down', dot: 'green' },
+      users:   { value: '85M',       variance: '↑ +8% vs PY',  direction: 'up',   dot: 'green' },
+    },
+    brands: [
+      { brand:'Brand A', rowDot:'green', revenue:['green','9,900K','+15%','up'], costs:['amber','-8,300K','',''], ebit:['green','1,600K','+8%','up'], betting:['amber','55%','',''], users:['green','19M','+11%','up'], pageviews:['green','315M','+13%','up'] },
+      { brand:'Brand B', rowDot:'green', revenue:['green','7,100K','+9%','up'], costs:['green','-5,950K','',''], ebit:['green','1,150K','+11%','up'], betting:['red','70%','',''], users:['green','13M','+7%','up'], pageviews:['green','205M','+8%','up'] },
+      { brand:'Brand C', rowDot:'green', revenue:['green','5,500K','+18%','up'], costs:['green','-4,500K','',''], ebit:['green','1,000K','+21%','up'], betting:['green','35%','',''], users:['green','11M','+15%','up'], pageviews:['green','180M','+16%','up'] },
+      { brand:'Brand D', rowDot:'green', revenue:['green','8,700K','+11%','up'], costs:['amber','-7,350K','',''], ebit:['green','1,350K','+6%','up'], betting:['red','65%','',''], users:['green','16M','+9%','up'], pageviews:['green','260M','+10%','up'] },
+      { brand:'Brand E', rowDot:'amber', revenue:['amber','4,150K','-4%','down'], costs:['green','-3,800K','',''], ebit:['red','350K','-38%','down'], betting:['green','10%','',''], users:['amber','7M','-2%','down'], pageviews:['green','135M','+3%','up'] },
+      { brand:'Brand F', rowDot:'green', revenue:['green','7,350K','+13%','up'], costs:['green','-6,400K','',''], ebit:['green','950K','+9%','up'], betting:['amber','40%','',''], users:['green','18M','+14%','up'], pageviews:['green','305M','+15%','up'] },
+    ]
+  }
+};
+
+const MONTHLY_LABELS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+const MONTHLY = {
+  // Actuals stay the same across modes (they're the same reality).
+  // Only the target series changes per compare mode.
+  // Users targets bake in sports calendar: Aug peak, Jun bump, Jan dip.
+  fc1: {
+    revenue: { actual: [3.4,3.5,3.6,3.7,3.8,3.9,3.4,3.5,3.7,3.6,3.9,4.2], target: [3.3,3.4,3.5,3.6,3.7,3.8,3.4,3.5,3.6,3.7,3.8,4.0] },
+    costs:   { actual: [-3.1,-3.2,-3.2,-3.3,-3.4,-3.5,-3.0,-3.1,-3.2,-3.3,-3.4,-3.5], target: [-3.0,-3.1,-3.2,-3.3,-3.3,-3.4,-3.0,-3.1,-3.2,-3.2,-3.3,-3.4] },
+    ebit:    { actual: [0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.3,0.5,0.6], target: [0.5,0.5,0.5,0.5,0.6,0.6,0.5,0.5,0.6,0.6,0.7,0.7] },
+    users:   { actual: [77,82,79,75,73,71,78,76,81,84,83,88], target: [76,80,78,74,72,70,77,75,79,82,82,86] },
+  },
+  bud: {
+    revenue: { actual: [3.4,3.5,3.6,3.7,3.8,3.9,3.4,3.5,3.7,3.6,3.9,4.2], target: [3.5,3.6,3.7,3.8,3.9,4.0,3.6,3.7,3.8,3.9,4.0,4.2] },
+    costs:   { actual: [-3.1,-3.2,-3.2,-3.3,-3.4,-3.5,-3.0,-3.1,-3.2,-3.3,-3.4,-3.5], target: [-2.9,-3.0,-3.1,-3.2,-3.2,-3.3,-2.9,-3.0,-3.1,-3.1,-3.2,-3.3] },
+    ebit:    { actual: [0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.3,0.5,0.6], target: [0.6,0.6,0.6,0.6,0.7,0.7,0.7,0.7,0.7,0.8,0.8,0.9] },
+    users:   { actual: [77,82,79,75,73,71,78,76,81,84,83,88], target: [75,79,77,73,71,69,76,74,78,81,81,85] },
+  },
+  py: {
+    revenue: { actual: [3.4,3.5,3.6,3.7,3.8,3.9,3.4,3.5,3.7,3.6,3.9,4.2], target: [3.0,3.1,3.2,3.3,3.4,3.5,3.0,3.1,3.2,3.3,3.4,3.7] },
+    costs:   { actual: [-3.1,-3.2,-3.2,-3.3,-3.4,-3.5,-3.0,-3.1,-3.2,-3.3,-3.4,-3.5], target: [-2.7,-2.8,-2.8,-2.9,-3.0,-3.1,-2.6,-2.7,-2.8,-2.9,-3.0,-3.0] },
+    ebit:    { actual: [0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.3,0.5,0.6], target: [0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.4,0.5,0.6] },
+    users:   { actual: [77,82,79,75,73,71,78,76,81,84,83,88], target: [70,74,72,68,66,64,71,69,73,76,76,80] },
+  }
+};
+
+const COMPARE_LABEL = { fc1: 'FC1', bud: 'Budget', py: 'PY' };
+const DOT_COLOR = { green: '#059669', amber: '#d97706', red: '#dc2626', orange: '#ea580c' };
+
+function renderHero(mode) {
+  const data = DATA[mode].group;
+  for (const [key, cell] of Object.entries(data)) {
+    document.querySelector(`[data-hero-value="${key}"]`).textContent = cell.value;
+    const varEl = document.querySelector(`[data-hero-var="${key}"]`);
+    varEl.textContent = cell.variance;
+    varEl.className = 'metric-delta num-variance ' + cell.direction;
+    document.querySelector(`[data-hero-dot="${key}"]`).style.background = DOT_COLOR[cell.dot];
+  }
+}
+
+function renderCell([dot, value, variance, direction]) {
+  const varSpan = variance ? `<span class="badge ${direction} num-variance">${variance}</span>` : '';
+  return `<td><span class="cell"><span class="dot ${dot}"></span><span class="num-value">${value}</span>${varSpan}</span></td>`;
+}
+
+function renderRows(mode) {
+  const rows = DATA[mode].brands;
+  document.getElementById('brandRows').innerHTML = rows.map(r => `
+    <tr>
+      <td class="brand"><span class="brand-inner"><span class="dot ${r.rowDot}"></span>${r.brand}</span></td>
+      ${renderCell(r.revenue)} ${renderCell(r.costs)} ${renderCell(r.ebit)} ${renderCell(r.betting)}
+      ${renderCell(r.users)} ${renderCell(r.pageviews)}
+    </tr>
+  `).join('');
+}
+
+function renderChart(id, key, mode) {
+  const el = document.getElementById(id);
+  let chart = echarts.getInstanceByDom(el);
+  if (!chart) chart = echarts.init(el);
+  const series = MONTHLY[mode][key];
+  const actualColors = series.actual.map((a, i) =>
+    a >= series.target[i] ? '#059669' : '#dc2626');
+  chart.setOption({
+    animation: false,
+    grid: { left: 2, right: 2, top: 2, bottom: 12 },
+    xAxis: { type: 'category', data: MONTHLY_LABELS,
+             axisLine: { show: false }, axisTick: { show: false },
+             axisLabel: { fontSize: 8, color: '#9ca3af', margin: 2 } },
+    yAxis: { type: 'value', show: false, scale: true },
+    tooltip: { trigger: 'axis',
+      formatter: params => {
+        const actual = params.find(p => p.seriesName === 'Actual')?.value;
+        const target = params.find(p => p.seriesName === COMPARE_LABEL[mode])?.value;
+        return `${params[0].axisValue}<br><b>Actual:</b> ${actual}<br><b>${COMPARE_LABEL[mode]}:</b> ${target}`;
+      } },
+    series: [
+      { name: COMPARE_LABEL[mode], type: 'bar', data: series.target,
+        itemStyle: { color: '#e5e7eb' }, barGap: '10%' },
+      { name: 'Actual', type: 'bar',
+        data: series.actual.map((v, i) => ({ value: v, itemStyle: { color: actualColors[i] } })) },
+    ],
+  }, true);
+}
+
+function renderCharts(mode) {
+  HERO_KEYS.forEach(k => renderChart(`chart-${k}`, k, mode));
+}
+
+function updateLabels(mode) {
+  const labels = {
+    fc1: { note: 'Reflecting: vs FC1',
+           table: 'All metrics vs FC1 · Traffic targets set at annual planning',
+           sub: 'vs FC1' },
+    bud: { note: 'Reflecting: vs Budget',
+           table: 'All metrics vs Budget · Traffic targets set at annual planning',
+           sub: 'vs Bud' },
+    py:  { note: 'Reflecting: vs PY',
+           table: 'All metrics vs Prior Year (same period)',
+           sub: 'vs PY' },
+  }[mode];
+  document.getElementById('compareNote').textContent = labels.note;
+  document.getElementById('tableNote').textContent = labels.table;
+  document.querySelectorAll('[data-th-sub="all"]').forEach(el => el.textContent = labels.sub);
+}
+
+function setMode(mode) {
+  document.querySelectorAll('.compare-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+  renderHero(mode); renderRows(mode); renderCharts(mode); updateLabels(mode);
+}
+
+document.querySelectorAll('.compare-btn').forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn.dataset.mode));
+});
+document.getElementById('valuesToggle').addEventListener('change', (e) => {
+  document.body.classList.toggle('show-values', e.target.checked);
+});
+window.addEventListener('resize', () => {
+  HERO_KEYS.forEach(k => echarts.getInstanceByDom(document.getElementById(`chart-${k}`))?.resize());
+});
+
+setMode('fc1');
+</script>
+</body>
+</html>
