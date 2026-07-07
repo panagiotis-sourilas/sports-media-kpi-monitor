@@ -1,0 +1,21 @@
+version: 2
+
+seeds:
+  - name: fx_rates
+    description: Monthly local-to-CHF exchange rates. Approximate historicals, used for reporting normalization.
+    config:
+      column_types:
+        period: DATE
+        currency: STRING
+        rate_to_chf: FLOAT64
+    columns:
+      - name: period
+        tests: [not_null]
+      - name: currency
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['EUR', 'RSD', 'RON', 'BGN']
+      - name: rate_to_chf
+        tests: [not_null]
