@@ -35,6 +35,8 @@ The pattern: every layer picks the cheapest thing that works. Then explains why 
 
 Three raw sources plus two seeds flow through staging → intermediate → marts. The final mart feeds the report and four data-quality tests catch drift before it reaches the reader.
 
+The whole chain runs on GitHub Actions on the 2nd of each month — see [`.github/workflows/monthly-refresh.yml`](.github/workflows/monthly-refresh.yml). It authenticates to BigQuery with a stored service-account key, rebuilds the marts, re-renders the HTML, and commits the fresh page back to master. GitHub Pages picks up the update automatically.
+
 ## Quickstart
 
 You need Python 3.12 (dbt-bigquery doesn't support 3.13+ yet) and a GCP project with BigQuery access.
