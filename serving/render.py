@@ -21,6 +21,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 PROJECT = os.environ.get("GCP_PROJECT_ID", "inc-182120-panagiotis-sourilas")
 MARTS_DATASET = "sports_media_kpi_monitor"
+BQ_LOCATION = "EU"  # dataset lives in EU, must match on the client
 BUCKET = os.environ.get("REPORT_BUCKET", "sports-media-kpi-monitor-reports")
 HERE = Path(__file__).parent
 
@@ -118,7 +119,7 @@ def main() -> None:
     ap.add_argument("--out", type=str, default="serving/output/index.html")
     args = ap.parse_args()
 
-    client = bigquery.Client(project=PROJECT)
+    client = bigquery.Client(project=PROJECT, location=BQ_LOCATION)
 
     period = date.fromisoformat(args.period) if args.period else latest_period(client)
     print(f"rendering {period}")
