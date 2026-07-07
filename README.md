@@ -27,6 +27,31 @@ No BI tool. No dashboard subscription. It's a page.
 
 The pattern: every layer picks the cheapest thing that works. Then explains why we didn't buy the modern default. Those explanations are the point — [see the ADRs](docs/decisions/).
 
+## Quickstart
+
+You need Python 3.12 (dbt-bigquery doesn't support 3.13+ yet) and a GCP project with BigQuery access.
+
+```bash
+# 1. Set up
+py -3.12 -m venv .venv && .venv\Scripts\activate    # Windows
+pip install dbt-bigquery google-cloud-bigquery jinja2
+
+# 2. Point at your GCP project
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+
+# 3. Generate synthetic data and load it
+python ingestion/synthetic_data/generate.py --out raw
+python ingestion/load_to_bigquery.py
+
+# 4. Build the models
+cd dbt && dbt seed && dbt run && dbt test && cd ..
+
+# 5. Render the HTML report
+python serving/render.py    # writes docs/index.html
+```
+
+Open `docs/index.html` in a browser.
+
 ## Where to look
 
 - [`docs/architecture.md`](docs/architecture.md) — the whole pipeline in one diagram

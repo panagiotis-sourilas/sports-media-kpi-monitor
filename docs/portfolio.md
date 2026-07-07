@@ -18,4 +18,4 @@ Not streaming. The real report is monthly. Making the demo streaming would be pr
 
 Not multi-tenant. One company, one report. The production version has per-brand access rules; the demo doesn't need them.
 
-Not a BI dashboard. No filters, no drill-down, no click-to-explore. It's a static page. Executives don't self-serve — they get sent a link and open it. See [`decisions/0003-why-static-html-not-bi-tool.md`](decisions/0003-why-static-html-not-bi-tool.md) *(coming Area 5)*.
+Not a BI dashboard. No filters, no drill-down, no click-to-explore. It's a static page. Executives don't self-serve — they get sent a link and open it. ADR on this choice is a follow-up.
