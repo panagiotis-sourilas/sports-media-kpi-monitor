@@ -224,9 +224,13 @@ def build_group_kpis(rows: list[dict], py_rows: dict, mode: str) -> dict:
 
     def kpi(actual, target, formatter, is_cost=False):
         v = (actual - target) / target if target else None
+        if v is None:
+            variance = "—"
+        else:
+            variance = f"{fmt_pct(v)} {label} ({formatter(target)})"
         return {
             "value": formatter(actual),
-            "variance": f"{fmt_pct(v)} {label}" if v is not None else "—",
+            "variance": variance,
             "direction": direction(v),
             "dot": status(v, is_cost=is_cost),
         }
