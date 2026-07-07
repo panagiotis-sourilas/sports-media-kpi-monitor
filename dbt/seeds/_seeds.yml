@@ -19,3 +19,35 @@ seeds:
                 values: ['EUR', 'RSD', 'RON', 'BGN']
       - name: rate_to_chf
         tests: [not_null]
+
+  - name: traffic_targets
+    description: >
+      Monthly Users and Pageviews targets per brand, both Budget and FC1.
+      Budget is frozen at annual planning; FC1 is the mid-year re-forecast.
+      Shape reflects sporting calendar seasonality (Aug peak, Jun bump, Jan dip).
+    config:
+      column_types:
+        brand_key: STRING
+        period: DATE
+        metric: STRING
+        budget: INT64
+        fc1: INT64
+    columns:
+      - name: brand_key
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['brand_a', 'brand_b', 'brand_c', 'brand_d', 'brand_e', 'brand_f']
+      - name: period
+        tests: [not_null]
+      - name: metric
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['users', 'pageviews']
+      - name: budget
+        tests: [not_null]
+      - name: fc1
+        tests: [not_null]
