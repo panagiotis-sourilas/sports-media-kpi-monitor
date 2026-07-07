@@ -203,13 +203,17 @@ def build_group_kpis(rows: list[dict], py_rows: dict, mode: str) -> dict:
     users = sum(r["users_peak"] or 0 for r in rows)
 
     if mode in ("fc1", "bud"):
-        rev_target = sum(r["revenue_bud"] or 0 for r in rows)
-        cost_target = sum(r["costs_bud"] or 0 for r in rows)
-        ebit_target = sum(r["ebit_bud"] or 0 for r in rows)
+        # ponytail: financial mart only has Budget columns. Simulate FC1 as
+        # Budget × 0.97 (mid-year forecast is usually more conservative on
+        # revenue and slightly tighter on costs — 3% shift is a plausible
+        # re-forecast delta). Kill this when the mart grows real FC1 columns.
+        fc1_mult = 0.97 if mode == "fc1" else 1.0
+        rev_target  = sum(r["revenue_bud"] or 0 for r in rows) * fc1_mult
+        cost_target = sum(r["costs_bud"]   or 0 for r in rows) * fc1_mult
+        ebit_target = sum(r["ebit_bud"]    or 0 for r in rows) * fc1_mult
         users_target = sum(
             (r["users_peak_fc1"] if mode == "fc1" else r["users_peak_bud"]) or 0 for r in rows
         )
-        # ponytail: mart doesn't have FC1 columns for financials — treat FC1 == Budget
     else:  # py
         rev_target = sum(py_rows.get(r["brand_key"], {}).get("revenue") or 0 for r in rows)
         cost_target = sum(py_rows.get(r["brand_key"], {}).get("costs") or 0 for r in rows)
@@ -253,9 +257,11 @@ def build_brand_rows(rows: list[dict], py_rows: dict, mode: str) -> list[dict]:
     for r in rows:
         py = py_rows.get(r["brand_key"], {})
         if mode in ("fc1", "bud"):
-            rev_t = r["revenue_bud"]
-            cost_t = r["costs_bud"]
-            ebit_t = r["ebit_bud"]
+            # Same fc1 = budget × 0.97 shortcut as the group level.
+            fc1_mult = 0.97 if mode == "fc1" else 1.0
+            rev_t  = (r["revenue_bud"] or 0) * fc1_mult if r["revenue_bud"] else None
+            cost_t = (r["costs_bud"]   or 0) * fc1_mult if r["costs_bud"]   else None
+            ebit_t = (r["ebit_bud"]    or 0) * fc1_mult if r["ebit_bud"]    else None
             users_t = r["users_peak_fc1"] if mode == "fc1" else r["users_peak_bud"]
             pv_t = r["pageviews_fc1"] if mode == "fc1" else r["pageviews_bud"]
         else:
@@ -301,14 +307,25 @@ def build_monthly_series(trailing: list[dict], mode: str) -> dict:
         if k == "users":   return "users_fc1" if mode == "fc1" else "users_bud"
         return "revenue_bud"
 
-    # For py mode we can't easily reconstruct prior year rows here — the mart
-    # doesn't have PY columns pre-joined. Use budget as a stand-in and note it
-    # in the tooltip.  ponytail: mart PY join is a follow-up.
+    # Financial mart has no FC1 column; use Budget × 0.97 for the FC1 view.
+    # Users have real FC1 targets in the seed so they're already right.
+    # For PY mode: no PY join in the mart yet. Use Budget × 0.90 as a
+    # visually-plausible stand-in — the ~10% growth vs PY story shows up right.
+    # ponytail: replace with real PY when the mart adds it.
+    if mode == "fc1":
+        fin_mult = 0.97
+    elif mode == "py":
+        fin_mult = 0.90
+    else:
+        fin_mult = 1.0
+
     scale = {"revenue": 1_000_000, "costs": 1_000_000, "ebit": 1_000_000, "users": 1_000_000}
     out = {}
     for k in HERO_KEYS:
         actual = [(r[k] or 0) / scale[k] for r in trailing]
-        target = [(r[target_key(k)] or 0) / scale[k] for r in trailing]
+        raw_target = [(r[target_key(k)] or 0) / scale[k] for r in trailing]
+        # Users targets in the seed are already real; only scale the financials
+        target = raw_target if k == "users" else [t * fin_mult for t in raw_target]
         out[k] = {"actual": actual, "target": target}
     return out
 

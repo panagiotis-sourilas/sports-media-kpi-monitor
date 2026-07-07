@@ -313,9 +313,20 @@ function renderChart(id, key, mode) {
     tooltip: {
       trigger: 'axis',
       formatter: params => {
+        const fmt = v => {
+          if (v == null) return '—';
+          const abs = Math.abs(v);
+          if (key === 'users') return v.toFixed(2) + 'M';
+          // Financials are already in millions; costs are negative
+          return v.toFixed(2) + 'M CHF';
+        };
         const actual = params.find(p => p.seriesName === 'Actual')?.value;
         const target = params.find(p => p.seriesName === COMPARE_LABEL[mode])?.value;
-        return `${params[0].axisValue}<br><b>Actual:</b> ${actual}<br><b>${COMPARE_LABEL[mode]}:</b> ${target}`;
+        const variance = (actual && target) ? ((actual - target) / target * 100).toFixed(1) + '%' : '—';
+        return `${params[0].axisValue}<br>
+                <b>Actual:</b> ${fmt(actual)}<br>
+                <b>${COMPARE_LABEL[mode]}:</b> ${fmt(target)}<br>
+                <b>Δ:</b> ${variance}`;
       }
     },
     series: [
