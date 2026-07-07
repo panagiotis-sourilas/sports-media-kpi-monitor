@@ -29,6 +29,12 @@ No BI tool. No dashboard subscription. It's a page.
 
 The pattern: every layer picks the cheapest thing that works. Then explains why we didn't buy the modern default. Those explanations are the point — [see the ADRs](docs/decisions/).
 
+## Pipeline
+
+![Lineage](docs/lineage.png)
+
+Three raw sources plus two seeds flow through staging → intermediate → marts. The final mart feeds the report and four data-quality tests catch drift before it reaches the reader.
+
 ## Quickstart
 
 You need Python 3.12 (dbt-bigquery doesn't support 3.13+ yet) and a GCP project with BigQuery access.
