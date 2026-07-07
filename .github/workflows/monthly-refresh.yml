@@ -1,0 +1,91 @@
+name: Monthly refresh
+
+# Runs at 06:00 UTC on the 2nd of each month. Regenerates synthetic data,
+# rebuilds the dbt project, re-renders docs/index.html, and commits back
+# to master. GitHub Pages picks up the fresh HTML automatically.
+
+on:
+  schedule:
+    - cron: '0 6 2 * *'
+  workflow_dispatch:  # allows manual runs from the Actions tab
+
+permissions:
+  contents: write  # needed to push the regenerated docs/index.html
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('**/requirements*.txt', '.github/workflows/monthly-refresh.yml') }}
+
+      - name: Install deps
+        run: |
+          pip install --upgrade pip
+          pip install dbt-bigquery google-cloud-bigquery google-cloud-storage jinja2
+
+      - name: Auth to GCP
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "$GCP_SA_KEY" > /tmp/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
+
+      - name: Configure dbt profile
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml <<'EOF'
+          sports_media_kpi_monitor:
+            target: dev
+            outputs:
+              dev:
+                type: bigquery
+                method: service-account
+                project: inc-182120-panagiotis-sourilas
+                dataset: sports_media_kpi_monitor
+                keyfile: /tmp/gcp-key.json
+                threads: 4
+                location: EU
+                priority: interactive
+          EOF
+
+      - name: Generate synthetic data
+        run: python ingestion/synthetic_data/generate.py --out raw
+
+      - name: Load raw to BigQuery
+        run: python ingestion/load_to_bigquery.py
+
+      - name: Run dbt
+        working-directory: dbt
+        run: |
+          dbt seed
+          dbt run
+          dbt test
+
+      - name: Render report
+        run: python serving/render.py
+
+      - name: Commit refreshed HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html
+          if git diff --staged --quiet; then
+            echo "no changes"
+          else
+            git commit -m "auto: monthly refresh $(date -u +%Y-%m)"
+            git push
+          fi
